@@ -535,7 +535,7 @@ svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
 
 <script>
 'use strict';
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const STORE = 'files-manager.';        // приставка ключей localStorage (таблица Игротеки, поле storage)
 const DB_NAME = 'files-manager';       // IndexedDB: демо-диск, его корзина, открытые папки
 const TRASH_DIR = '.files-manager-trash'; // корзина программы внутри открытой настоящей папки (браузер)
@@ -3296,6 +3296,16 @@ function bindPanel(p) {
   p.view.addEventListener('mousedown', (ev) => {
     if (ev.button !== 0 || ev.target.closest('.thead') || ev.target.classList.contains('rename')) return;
     const tab = p.tab, e = itemAt(p, ev.target);
+    // Двойной щелчок ловим на втором нажатии (ev.detail === 2), пока элемент под мышью живой. Событие dblclick
+    // ненадёжно: щелчок между нажатиями перерисовывает список, и dblclick уходит в старый, уже убранный
+    // со страницы элемент - до p.view он не доходит (так было в 1.0.0). Проводник тоже открывает на втором нажатии.
+    if (e && ev.detail === 2 && p.down === e.path) {
+      ev.preventDefault();
+      p.pressed = null; p.down = null; p.opened = performance.now();
+      openEntry(tab, e);
+      return;
+    }
+    p.down = e ? e.path : null;
     if (e) {
       // нажатие на уже выделенный: выделение не трогаем до отпускания (чтобы тащить несколько)
       if (tab.sel.has(e.path) && !ev.shiftKey && !(ev.ctrlKey || ev.metaKey)) { p.pressed = e.path; return; }
@@ -3309,7 +3319,8 @@ function bindPanel(p) {
     if (e && p.pressed === e.path && !ev.shiftKey && !(ev.ctrlKey || ev.metaKey)) { p.tab.sel = new Set([e.path]); p.tab.focus = p.tab.anchor = e.path; renderTab(p.tab); renderPreview(); renderToolbar(); }
     p.pressed = null;
   });
-  p.view.addEventListener('dblclick', (ev) => { const e = itemAt(p, ev.target); if (e) openEntry(p.tab, e); });
+  // запасной путь (сенсорный экран, программное событие): только если второе нажатие ещё не открыло
+  p.view.addEventListener('dblclick', (ev) => { if (performance.now() - (p.opened || 0) < 1000) return; const e = itemAt(p, ev.target); if (e) openEntry(p.tab, e); });
   p.view.addEventListener('auxclick', (ev) => { if (ev.button === 1) { const e = itemAt(p, ev.target); if (e && e.dir) { ev.preventDefault(); openEntry(p.tab, e, { newTab: true }); } } });
   p.view.addEventListener('mousedown', (ev) => { if (ev.button === 1) ev.preventDefault(); });
   p.view.addEventListener('contextmenu', (ev) => {
