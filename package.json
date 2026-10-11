@@ -1,0 +1,26 @@
+{
+  "name": "filesmanager",
+  "version": "1.0.1",
+  "private": true,
+  "description": "FilesManager: file explorer in one HTML page - folder tree, tabs, two panels, search, file preview, Windows Explorer hotkeys; deletes only to the Recycle Bin; Electron app for Windows",
+  "author": "ALEXalesha",
+  "license": "MIT",
+  "homepage": "https://alexalesha.github.io/FilesManager/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ALEXalesha/FilesManager.git"
+  },
+  "scripts": {
+    "start": "electron electron",
+    "dist": "electron-builder --projectDir electron --win nsis portable --x64",
+    "test": "playwright test",
+    "test:page": "playwright test tests/files-manager.spec.js",
+    "screenshots": "node tools/screenshots.js",
+    "icon": "node electron/make-icon.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "electron": "44.4.5",
+    "electron-builder": "26.15.3"
+  }
+}
