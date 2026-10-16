@@ -277,6 +277,7 @@ svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
 .thead > button.sorted { color: var(--text); }
 .thead > button svg { width: 11px; height: 11px; }
 .thead > button.r { justify-content: flex-end; }
+.thead > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .canvas { position: relative; }
 .it { position: absolute; border-radius: 7px; border: 1px solid transparent; cursor: default; }
 .it:hover { background: var(--glass-bg); }
@@ -553,7 +554,7 @@ svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
 
 <script>
 'use strict';
-const VERSION = '1.0.2';
+const VERSION = '1.0.3';
 const STORE = 'files-manager.';        // приставка ключей localStorage (таблица Хаба, поле storage)
 const DB_NAME = 'files-manager';       // IndexedDB: демо-диск, его корзина, открытые папки
 const TRASH_DIR = '.files-manager-trash'; // корзина программы внутри открытой настоящей папки (браузер)
@@ -581,7 +582,7 @@ const I18N = {
     'cmd.rename': 'Переименовать (F2)', 'cmd.delete': 'Удалить в Корзину (Del)', 'cmd.properties': 'Свойства (Alt+Enter)', 'cmd.sort': 'Сортировка',
     'cmd.view': 'Вид (Ctrl+Shift+1, 5, 6)', 'cmd.dual': 'Две панели (Ctrl+\\)', 'cmd.preview': 'Область просмотра (Alt+P)', 'cmd.trash': 'Корзина',
     'cmd.settings': 'Настройки', 'cmd.help': 'Горячие клавиши (F1)', 'cmd.back': 'Назад (Alt+←)', 'cmd.forward': 'Вперёд (Alt+→)',
-    'cmd.up': 'Вверх (Alt+↑)', 'cmd.refresh': 'Обновить (F5)', 'cmd.newTab': 'Новая вкладка (Ctrl+T)', 'cmd.closeTab': 'Закрыть вкладку (Ctrl+W)',
+    'cmd.up': 'Вверх (Alt+↑)', 'cmd.refresh': 'Обновить (F5)', 'cmd.newTab': 'Новая вкладка (Ctrl+T)', 'crumb.sep': 'Папки внутри «{0}»', 'cmd.closeTab': 'Закрыть вкладку (Ctrl+W)',
     'm.open': 'Открыть', 'm.openTab': 'Открыть в новой вкладке', 'm.openOther': 'Открыть в другой панели', 'm.openSystem': 'Открыть в программе по умолчанию',
     'm.showInFolder': 'Показать в Проводнике Windows', 'm.cut': 'Вырезать', 'm.copy': 'Копировать', 'm.paste': 'Вставить', 'm.copyPath': 'Копировать путь',
     'm.rename': 'Переименовать', 'm.delete': 'Удалить в Корзину', 'm.properties': 'Свойства', 'm.addFav': 'Добавить в избранное', 'm.removeFav': 'Убрать из избранного',
@@ -652,7 +653,7 @@ const I18N = {
     'cmd.rename': 'Rename (F2)', 'cmd.delete': 'Delete to Recycle Bin (Del)', 'cmd.properties': 'Properties (Alt+Enter)', 'cmd.sort': 'Sort',
     'cmd.view': 'View (Ctrl+Shift+1, 5, 6)', 'cmd.dual': 'Two panes (Ctrl+\\)', 'cmd.preview': 'Preview pane (Alt+P)', 'cmd.trash': 'Recycle Bin',
     'cmd.settings': 'Settings', 'cmd.help': 'Keyboard shortcuts (F1)', 'cmd.back': 'Back (Alt+←)', 'cmd.forward': 'Forward (Alt+→)',
-    'cmd.up': 'Up (Alt+↑)', 'cmd.refresh': 'Refresh (F5)', 'cmd.newTab': 'New tab (Ctrl+T)', 'cmd.closeTab': 'Close tab (Ctrl+W)',
+    'cmd.up': 'Up (Alt+↑)', 'cmd.refresh': 'Refresh (F5)', 'cmd.newTab': 'New tab (Ctrl+T)', 'crumb.sep': 'Folders in “{0}”', 'cmd.closeTab': 'Close tab (Ctrl+W)',
     'm.open': 'Open', 'm.openTab': 'Open in new tab', 'm.openOther': 'Open in the other pane', 'm.openSystem': 'Open with default app',
     'm.showInFolder': 'Show in Windows Explorer', 'm.cut': 'Cut', 'm.copy': 'Copy', 'm.paste': 'Paste', 'm.copyPath': 'Copy as path',
     'm.rename': 'Rename', 'm.delete': 'Delete to Recycle Bin', 'm.properties': 'Properties', 'm.addFav': 'Add to favorites', 'm.removeFav': 'Remove from favorites',
@@ -2055,7 +2056,7 @@ function renderCrumbs(p) {
   let html = '';
   cr.forEach((c, i) => {
     html += `<button class="crumb" data-path="${esc(c.path)}">${esc(c.label)}</button>`;
-    if (i < cr.length - 1 || c.path !== TRASH) html += `<button class="crumb-sep" data-path="${esc(c.path)}"><svg class="i"><use href="#i-chev"/></svg></button>`;
+    if (i < cr.length - 1 || c.path !== TRASH) html += `<button class="crumb-sep" data-path="${esc(c.path)}" title="${esc(t('crumb.sep', c.label))}"><svg class="i"><use href="#i-chev"/></svg></button>`;
   });
   if (tab.search) html += `<span class="more">${esc(t('st.found', tab.search.results.length))}</span>`;
   p.crumbs.innerHTML = html;
@@ -2512,7 +2513,10 @@ function conflictDialog(dirLabel, name, rest) {
 }
 
 // Контекстное меню: не вылезает за край окна, стрелки, Enter, Esc
-const Menu = { el: null, items: [], hot: -1, onClose: null };
+const Menu = { el: null, items: [], hot: -1, onClose: null, click: 0, bornClick: -1 };
+// щелчок по кнопке, после которого клавиши возвращаются в список; запоминается до обработчиков - они перерисовывают кнопку
+let clickBack = false;
+document.addEventListener('click', (ev) => { Menu.click++; clickBack = !!ev.target.closest('#toolbar button, .tabs, .thead button, .crumb, .nav [data-cmd], .status [data-cmd]'); }, true);
 function showMenu(x, y, items, onClose) {
   hideMenu();
   const el = $('#menu');
@@ -2520,7 +2524,7 @@ function showMenu(x, y, items, onClose) {
   el.innerHTML = Menu.items.map((it, i) => (it === '-' ? '<div class="ms"></div>'
     : `<button class="mi" role="menuitem" data-i="${i}"${it.cmd ? ` data-cmd="${esc(it.cmd)}"` : ''}${it.disabled ? ' disabled' : ''}><span class="chk">${it.check ? '✓' : it.radio ? '•' : ''}</span><span class="nm">${esc(it.label)}</span>${it.key ? `<span class="k">${esc(it.key)}</span>` : ''}</button>`)).join('');
   el.hidden = false;
-  Menu.el = el; Menu.hot = -1; Menu.onClose = onClose || null;
+  Menu.el = el; Menu.hot = -1; Menu.onClose = onClose || null; Menu.bornClick = Menu.click;
   const r = el.getBoundingClientRect();
   const W = window.innerWidth, H = window.innerHeight;
   el.style.left = Math.max(8, Math.min(x, W - r.width - 8)) + 'px';
@@ -2941,12 +2945,17 @@ function setDual(on) {
   for (const p of App.panels) if (!p.el.hidden) { if (p.tab.stale || !p.tab.entries.length) load(p.tab); renderPanel(p); }
   afterNav(activeTab());
 }
-let sessionTimer = 0;
+// Вкладки пишутся сразу: с таймером 200 мс закрытое сразу после перехода окно теряло новую вкладку и папку
 function saveSession() {
-  clearTimeout(sessionTimer);
-  sessionTimer = setTimeout(() => {
-    Store.set('session', { active: App.active, panels: App.panels.map((p) => ({ cur: p.cur, tabs: p.tabs.map((tb) => ({ vol: tb.loc.vol, path: tb.loc.path, view: tb.view })) })) });
-  }, 200);
+  if (App.panels.length < 2) return;
+  Store.set('session', { active: App.active, panels: App.panels.map((p) => ({ cur: p.cur, tabs: p.tabs.map((tb) => ({ vol: tb.loc.vol, path: tb.loc.path, view: tb.view })) })) });
+}
+// после щелчка по кнопке (не поле ввода, не открытое меню или окно) клавиши снова идут в список
+function backToList() {
+  if (Modal.stack.length || Menu.el || !$('#viewer').hidden) return;
+  const a = document.activeElement;
+  if (a && a !== document.body && (a.matches('input, textarea, select') || !a.closest('#toolbar, .tabs, .thead, .crumbs, .nav, .status'))) return;
+  focusView();
 }
 function focusView(p = activePanel()) { if (p && !Modal.stack.length) p.view.focus({ preventScroll: true }); }
 
@@ -3754,10 +3763,11 @@ async function init() {
   // кнопки панели команд и навигации
   document.addEventListener('click', (ev) => {
     const mi = ev.target.closest('#menu .mi');
-    if (mi) { const it = Menu.items[+mi.dataset.i]; hideMenu(); if (it && it.run) it.run(); return; }
-    if (Menu.el && !ev.target.closest('#menu')) hideMenu();
+    if (mi) { const it = Menu.items[+mi.dataset.i]; hideMenu(); if (it && it.run) it.run(); backToList(); return; }
+    if (Menu.el && !ev.target.closest('#menu') && Menu.bornClick !== Menu.click) hideMenu();
     const b = ev.target.closest('#toolbar [data-cmd], .nav [data-cmd], .status [data-cmd], .tab-add[data-cmd]');
     if (b && !b.disabled) { const pn = ev.target.closest('.panel'); if (pn) setActive(+pn.dataset.panel); run(b.dataset.cmd, b); }
+    if (clickBack) backToList();
   });
   document.addEventListener('contextmenu', (ev) => { if (!ev.target.closest('.view, #sidebar, .tabs, input')) ev.preventDefault(); });
   document.addEventListener('mousedown', (ev) => { if (Menu.el && !ev.target.closest('#menu')) hideMenu(); });
