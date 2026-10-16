@@ -1,7 +1,7 @@
 {
   "name": "files-manager",
   "productName": "FilesManager",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "FilesManager - file explorer: folder tree, tabs, two panels, search, file preview, Windows Explorer hotkeys; deletes only to the Recycle Bin",
   "main": "main.js",
   "author": "ALEXalesha",

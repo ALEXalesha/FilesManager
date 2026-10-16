@@ -157,6 +157,10 @@ svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
   overflow-x: auto; scrollbar-width: none;
 }
 #toolbar::-webkit-scrollbar { display: none; }
+/* Не влезло в окно (замер fitToolbar): сначала без подписей, потом в две строки. Полоса прокрутки здесь скрыта,
+   и мышью до «Настроек» и «Справки» было не добраться (окно 560-1120 px). */
+#toolbar.tb-short .tb .lbl, #toolbar.tb-short .brand .lbl { display: none; }
+#toolbar.tb-wrap { flex-wrap: wrap; row-gap: 4px; }
 .tb {
   display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 9px; flex: none;
   border: 1px solid transparent; border-radius: 8px; background: transparent; cursor: pointer; white-space: nowrap;
@@ -202,6 +206,7 @@ svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
 #panels { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; min-height: 0; }
 #panels.dual { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .panel {
+  container-type: inline-size;
   display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; min-width: 0; min-height: 0;
   border-radius: 12px; background: var(--glass-bg-soft); border: 1px solid var(--glass-border); overflow: hidden;
 }
@@ -245,6 +250,19 @@ svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
 .search:focus-within, .addr:focus-within { border-color: rgb(var(--accent-rgb) / 0.7); }
 .search .sx { border: 0; background: none; border-radius: 5px; padding: 2px; cursor: pointer; display: grid; place-items: center; }
 .search .sx svg { width: 12px; height: 12px; }
+/* узкая панель (две панели рядом в окне 720-1000 px): поле поиска уходило за край панели */
+@container (max-width: 400px) {
+  .nav { gap: 2px; padding: 6px 4px; }
+  .nav .nb.hide-narrow { display: none; }
+  .addr { min-width: 56px; }
+  .search { flex-basis: 110px; min-width: 64px; }
+}
+/* совсем узкая (две панели и область просмотра): поиск отдельной строкой под адресом */
+@container (max-width: 300px) {
+  .nav { flex-wrap: wrap; row-gap: 4px; }
+  .addr { flex: 1 1 0; }
+  .search { flex: 1 1 100%; }
+}
 
 /* список файлов (виртуальный: в DOM только видимые строки) */
 .view { position: relative; overflow: auto; outline: none; min-height: 0; user-select: none; }
@@ -403,12 +421,12 @@ svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
 /* узкое окно и телефон */
 .side-toggle { display: none; }
 @media (max-width: 900px) {
-  #preview { position: fixed; right: 8px; top: 56px; bottom: 8px; width: min(340px, calc(100vw - 16px)); z-index: 30; background: var(--menu-bg); }
+  #preview { position: fixed; right: 8px; top: calc(var(--tb-h, 46px) + 10px); bottom: 8px; width: min(340px, calc(100vw - 16px)); z-index: 30; background: var(--menu-bg); }
   .tb .lbl { display: none; }
 }
 @media (max-width: 720px) {
   #main { grid-template-columns: minmax(0, 1fr); padding: 4px; }
-  #sidebar { position: fixed; left: 4px; top: 50px; bottom: 4px; width: min(280px, calc(100vw - 40px)); z-index: 30; background: var(--menu-bg); display: none; }
+  #sidebar { position: fixed; left: 4px; top: calc(var(--tb-h, 46px) + 4px); bottom: 4px; width: min(280px, calc(100vw - 40px)); z-index: 30; background: var(--menu-bg); display: none; }
   body.side-open #sidebar { display: block; }
   .side-toggle { display: inline-flex; }
   #panels.dual { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
@@ -535,7 +553,7 @@ svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
 
 <script>
 'use strict';
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const STORE = 'files-manager.';        // приставка ключей localStorage (таблица Игротеки, поле storage)
 const DB_NAME = 'files-manager';       // IndexedDB: демо-диск, его корзина, открытые папки
 const TRASH_DIR = '.files-manager-trash'; // корзина программы внутри открытой настоящей папки (браузер)
@@ -1979,6 +1997,8 @@ const bytesExact = (n) => t('pr.bytes', fmtSize(n), Number(n).toLocaleString(set
 // Отрисовка панели. Список виртуальный: в DOM только видимые строки (+ запас), поэтому
 // папка на десятки тысяч файлов не тормозит.
 function columnsOf(tab, width) {
+  // уже 240 px (две панели и область просмотра) столбец размера не влезал рядом с именем и срезался
+  if (width < 240) return ['name'];
   if (tab.loc.path === TRASH) return width < 560 ? ['name', 'size'] : ['name', 'from', 'deleted', 'size'];
   const cols = ['name'];
   if (tab.search && width >= 640) cols.push('where');
@@ -2285,6 +2305,14 @@ function renderToolbar() {
   $('#toolbar [data-cmd=preview]').classList.toggle('on', settings.preview);
   if (tab) $('#toolbar .view-ico use').setAttribute('href', '#i-' + tab.view);
   $('#ui-lang').textContent = settings.ui === 'ru' ? 'EN' : 'RU';
+  fitToolbar();
+}
+function fitToolbar() {
+  const tb = $('#toolbar');
+  tb.classList.remove('tb-short', 'tb-wrap');
+  if (tb.scrollWidth > tb.clientWidth + 1) tb.classList.add('tb-short');
+  if (tb.scrollWidth > tb.clientWidth + 1) tb.classList.add('tb-wrap');
+  document.documentElement.style.setProperty('--tb-h', tb.offsetHeight + 'px');
 }
 function updateTitle() {
   const tab = activeTab(), v = tab && vol(tab.loc.vol);
@@ -3736,7 +3764,7 @@ async function init() {
   document.addEventListener('keydown', onKey);
   document.addEventListener('mouseup', (ev) => { if (ev.button === 3 || ev.button === 4) { ev.preventDefault(); if ($('#viewer').hidden && !Modal.stack.length) (ev.button === 3 ? goBack : goForward)(activeTab()); } });
   window.addEventListener('blur', hideMenu);
-  window.addEventListener('resize', hideMenu);
+  window.addEventListener('resize', () => { hideMenu(); fitToolbar(); });
   $('#viewer').addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-vw]');
     if (!b) { if (ev.target.classList.contains('vw-body')) closeViewer(); return; }
