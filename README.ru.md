@@ -1,12 +1,14 @@
 <div align="center">
 
+<img src="electron/icon.png" width="96" alt="">
+
 # Файловый менеджер
 
 **Файловый менеджер (FilesManager) - проводник в одной HTML-странице: дерево папок, вкладки, две панели, поиск по маске, просмотр файлов и горячие клавиши Проводника Windows. Есть программа для Windows на Electron, которая работает с настоящим диском. Удалять безвозвратно она не умеет: всё уходит в Корзину.**
 
 [**▶ Открыть на сайте (демо-диск) →**](https://alexalesha.github.io/FilesManager/) &nbsp;·&nbsp; [Скачать для Windows](https://github.com/ALEXalesha/FilesManager/releases/latest) &nbsp;·&nbsp; [English version of this file](README.md)
 
-[![Status](https://img.shields.io/badge/status-stable-brightgreen)](#) [![Release](https://img.shields.io/github/v/release/ALEXalesha/FilesManager)](https://github.com/ALEXalesha/FilesManager/releases/latest) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/docs/Web/HTML) [![Electron](https://img.shields.io/badge/Electron-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/) [![Website](https://img.shields.io/badge/Website-open-0A84FF?logo=googlechrome&logoColor=white)](https://alexalesha.github.io/FilesManager/) [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
+[![Status](https://img.shields.io/badge/status-stable-brightgreen)](#) [![Release](https://img.shields.io/github/v/release/ALEXalesha/FilesManager)](https://github.com/ALEXalesha/FilesManager/releases/latest) [![CI](https://github.com/ALEXalesha/FilesManager/actions/workflows/ci.yml/badge.svg)](https://github.com/ALEXalesha/FilesManager/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/docs/Web/HTML) [![Electron](https://img.shields.io/badge/Electron-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/) [![Website](https://img.shields.io/badge/Website-open-0A84FF?logo=googlechrome&logoColor=white)](https://alexalesha.github.io/FilesManager/) [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
 
 Код, тесты и документация этого проекта написаны Claude (Anthropic) в Claude Code. Идеи, проверка и решения - Алексей.
 
